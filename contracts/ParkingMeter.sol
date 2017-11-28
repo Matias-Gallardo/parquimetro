@@ -9,6 +9,7 @@ contract ParkingMeter {
     using SafeMath for uint256;
     uint256 hourPrice;
     uint256 maxHours;
+    uint256 fineCost;
     uint8 public constant decimals = 2;
     uint256 public cityWalletBalance;
 
@@ -104,7 +105,7 @@ contract ParkingMeter {
         balances[msg.sender].coins = SafeMath.sub(balances[msg.sender].coins,cost);
         balances[msg.sender].isParked = false;
         balances[msg.sender].endTime = block.timestamp;
-        cityWalletBalance = SafeMath.sub(cityWalletBalance,cost);
+        cityWalletBalance = SafeMath.add(cityWalletBalance,cost);
         LogCarHasLeft(msg.sender, time);
     }
 
@@ -124,9 +125,11 @@ contract ParkingMeter {
         balances[user].scoring = SafeMath.add(balances[user].scoring, 1);
     }
 
-    function resetScoring() payable public {
-        require (msg.value);
-
+    function resetScoring(address user) payable public {
+        require (msg.sender == cityWallet);
+        if(msg.value >= fineCost) {
+            balances[user].scoring = 0;
+        }
     }
 
 
