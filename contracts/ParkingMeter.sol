@@ -66,8 +66,6 @@ contract ParkingMeter {
     }
 
     event LogCarHasParked(address user, uint startTime, uint value, string location);
-    event LogInsufficentFunds(address user, uint value);
-    event LogBadScoring(address user, uint scoring);
 
     function buyCoins() payable public {
         balances[msg.sender].coins = SafeMath.add(balances[msg.sender].coins, msg.value);
@@ -79,6 +77,11 @@ contract ParkingMeter {
         uint valueToSend = balances[msg.sender].coins;
         balances[msg.sender].coins = 0;
         msg.sender.transfer(valueToSend);
+    }
+
+    function withdrawCityBalance() public {
+        require(msg.sender == cityWallet);
+        msg.sender.transfer(cityWalletBalance);
     }
 
     function startParking(string location) payable public {
@@ -95,22 +98,22 @@ contract ParkingMeter {
     }
 
     
-    event LogCarHasLeft(address user, uint cost);
+    event LogCarHasLeft(address user, uint cost, uint time);
 
     function stopParking() public {
-        
-        uint256 time = balances[msg.sender].startTime - block.timestamp;
-        uint256 costPerSecond = SafeMath.div(maxHours,hourPrice);
-        uint256 cost = SafeMath.mul(time,costPerSecond);
-        balances[msg.sender].coins = SafeMath.sub(balances[msg.sender].coins,cost);
+        require(balances[msg.sender].isParked == true);
+        uint256 time = block.timestamp - balances[msg.sender].startTime;
+        uint256 costPerSecond = maxHours / hourPrice;
+        uint256 cost = time * costPerSecond;
+        balances[msg.sender].coins = balances[msg.sender].coins - cost;
         balances[msg.sender].isParked = false;
         balances[msg.sender].endTime = block.timestamp;
-        cityWalletBalance = SafeMath.add(cityWalletBalance,cost);
-        LogCarHasLeft(msg.sender, time);
+        cityWalletBalance = cityWalletBalance + cost;
+        LogCarHasLeft(msg.sender, cost, time);
     }
 
-    function getCoins(address user) public constant returns(uint256) {
-        return balances[user].coins;
+    function getCoins() public constant returns(uint256) {
+        return balances[msg.sender].coins;
     }
 
     function isParked(address user) public constant returns(bool) {
@@ -127,7 +130,7 @@ contract ParkingMeter {
 
     function resetScoring(address user) payable public {
         require (msg.sender == cityWallet);
-        if(msg.value >= fineCost) {
+        if (msg.value >= fineCost) {
             balances[user].scoring = 0;
         }
     }

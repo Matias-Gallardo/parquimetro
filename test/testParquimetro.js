@@ -32,7 +32,7 @@ contract('ParkingMeter', function (accounts) {
 
   it("should not add to balance and user can not start parking", async function () {
     const payValue = 400;
-    const startBalance = await contract.getCoins(Alice);
+    const startBalance = await contract.getCoins();
     try {
       const start = await contract.startParking("abc", {
         value: payValue
@@ -45,11 +45,11 @@ contract('ParkingMeter', function (accounts) {
 
   it("user send funds", async function () {
     const payValue = 400;
-    const startBalance = await contract.getCoins(Alice);
+    const startBalance = await contract.getCoins();
     const start = await contract.buyCoins({
       value: payValue
     });
-    const endBalance = await contract.getCoins(Alice);
+    const endBalance = await contract.getCoins();
     assert.equal(startBalance.toNumber() + 400, endBalance, "Coins were not increased");
 
   });
@@ -59,10 +59,17 @@ contract('ParkingMeter', function (accounts) {
     const start = await contract.buyCoins({
       value: payValue
     });
-    const startBalance = await contract.getCoins(Alice);
+    const startBalance = await contract.getCoins();
     const withdraw = await contract.withdrawCoins();
-    const endBalance = await contract.getCoins(Alice);
+    const endBalance = await contract.getCoins();
     assert.equal(startBalance - payValue, endBalance.toNumber(), "Coins were not 0");
+  });
+
+  it("checking if parked", async function () {
+    const payValue = 5760000;
+    const isParked = await contract.isParked(Alice);
+    assert.equal(isParked, false, "the user must not be parked");
+
   });
 
   it("should add coins to user", async function () {
@@ -70,7 +77,7 @@ contract('ParkingMeter', function (accounts) {
     const buy = await contract.buyCoins({
       value: payValue
     });
-    const balance = await contract.getCoins(Alice);
+    const balance = await contract.getCoins();
     assert.equal(payValue, balance.toNumber(), "Funds are not " + payValue + " and it is " + balance.toNumber());
   });
 
